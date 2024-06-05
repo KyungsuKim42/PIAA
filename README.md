@@ -4,7 +4,7 @@
 # Github에서 가져오거나
 git pull https://github.com/KyungsuKim42/~~
 # 아니면 디렉토리 전체 복사
-cp /home/kyungsukim/git/piaa/ -r /my/directory/
+cp -r /home/kyungsukim/git/piaa/ /my/directory/
 
 cd /my/directory/
 pip install .
