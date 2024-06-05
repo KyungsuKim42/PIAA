@@ -10,7 +10,7 @@ setup(
     author='Kyungsu Kim',
     author_email='kyungsu.kim@snu.ac.kr',
     description='PIAA for Personal Aesthetic Preference Optimization.',
-    packages=find_packages(),
+    packages=['piaa'],
     install_requires=read_requirements(),
     classifiers=[
         'Development Status :: 3 - Alpha',

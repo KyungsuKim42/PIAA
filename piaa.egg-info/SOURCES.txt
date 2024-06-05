@@ -1,5 +1,10 @@
+LICENSE
 README.md
 setup.py
+piaa/__init__.py
+piaa/para_taskset.py
+piaa/piaa.py
+piaa/score_predictor.py
 piaa.egg-info/PKG-INFO
 piaa.egg-info/SOURCES.txt
 piaa.egg-info/dependency_links.txt
