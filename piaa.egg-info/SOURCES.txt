@@ -1,0 +1,7 @@
+README.md
+setup.py
+piaa.egg-info/PKG-INFO
+piaa.egg-info/SOURCES.txt
+piaa.egg-info/dependency_links.txt
+piaa.egg-info/requires.txt
+piaa.egg-info/top_level.txt

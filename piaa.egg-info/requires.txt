@@ -1,0 +1,7 @@
+openai-clip==1.0.1
+learn2learn==0.2.0
+numpy==1.26.4
+pandas==2.2.2
+Pillow==10.3.0
+setuptools==58.0.4
+torch==2.3.0
