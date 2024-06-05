@@ -2,7 +2,7 @@
 
 ```bash
 # Github에서 가져오거나
-git pull https://github.com/KyungsuKim42/~~
+git pull https://github.com/KyungsuKim42/piaa.git
 # 아니면 디렉토리 전체 복사
 cp -r /home/kyungsukim/git/piaa/ /my/directory/
 
