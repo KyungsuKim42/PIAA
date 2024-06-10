@@ -1,18 +1,3 @@
-# Install
-
-```bash
-# Github에서 가져오거나
-git pull https://github.com/KyungsuKim42/piaa.git
-# 아니면 디렉토리 전체 복사
-cp -r /home/kyungsukim/git/piaa/ /my/directory/
-
-cd /my/directory/
-pip install .
-```
-
-# Example Usage (PARA)
-
-```Python
 from piaa.piaa import PIAA
 from piaa.para_taskset import ParaTaskset
 from piaa.sac_taskset import SACTaskset
@@ -48,4 +33,3 @@ y_pred = piaa_model.predict(query_x)
 y_pred = y_pred.cpu().detach().numpy()
 mae = np.abs(query_y-y_pred).mean()
 print(mae)
-```

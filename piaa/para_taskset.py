@@ -6,7 +6,7 @@ from PIL import Image
 
 
 class ParaTaskset():
-    def __init__(self, split="train", support_size=80, query_size=40, y_label="aestheticScore", make_uid_list=False):
+    def __init__(self, split="train", support_size=80, query_size=40, label_type="aestheticScore", input_type="clip", make_uid_list=False):
         df = pd.read_csv('/disk2/PARA/annotation/PARA-Images.csv')
         self.df = df
         if make_uid_list:
@@ -17,7 +17,8 @@ class ParaTaskset():
         self.uid_list = uid_list
         self.support_size = support_size
         self.query_size = query_size
-        self.y_label = y_label
+        self.label_type = label_type
+        self.input_type = input_type
         if split == "train":
             self.uid_list = uid_list[:398]
             self.num_uid = 398
@@ -45,13 +46,19 @@ class ParaTaskset():
 
         support_session_ids = uid_df.iloc[support_indices]['sessionId'].values
         support_img_names = uid_df.iloc[support_indices]['imageName'].values
-        support_x = self.load_embedding(support_session_ids, support_img_names)
-        support_y = uid_df.iloc[support_indices][self.y_label].values
+        if self.input_type == "clip":
+            support_x = self.load_embedding(support_session_ids, support_img_names)
+        elif self.input_type == "image":
+            support_x = self.load_image(support_session_ids, support_img_names)
+        support_y = uid_df.iloc[support_indices][self.label_type].values
 
         query_session_ids = uid_df.iloc[query_indices]['sessionId'].values
         query_img_names = uid_df.iloc[query_indices]['imageName'].values
-        query_x = self.load_embedding(query_session_ids, query_img_names)
-        query_y = uid_df.iloc[query_indices][self.y_label].values
+        if self.input_type == "clip":
+            query_x = self.load_embedding(query_session_ids, query_img_names)
+        elif self.input_type == "image":
+            query_x = self.load_image(query_session_ids, query_img_names)
+        query_y = uid_df.iloc[query_indices][self.label_type].values
 
         return support_x, support_y, query_x, query_y
     
@@ -61,6 +68,12 @@ class ParaTaskset():
             fname = fname.replace(".jpg", ".npy")
             emb[i] = np.load(f"/disk2/PARA/imgs/{session_id}/{fname.replace('.jpg','.npy')}")
         return emb
+    
+    def load_image(self, session_ids, support_fnames):
+        imgs = []
+        for session_id, fname in zip(session_ids, support_fnames):
+            imgs.append(Image.open(f"/disk2/PARA/imgs/{session_id}/{fname}"))
+        return imgs
 
     def make_uid_list(self):
         df = self.df
