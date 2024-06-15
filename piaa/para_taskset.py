@@ -33,6 +33,8 @@ class ParaTaskset():
         uid = self.uid_list[uid]
         uid_df = self.df[self.df['userId'] == uid]
         num_samples = uid_df.shape[0]
+
+        # TODO: update this part like SACTaskset.sample()
         if self.query_size > 0:
             assert num_samples >= self.support_size+self.query_size, "Not enough samples for support and query"
         else:

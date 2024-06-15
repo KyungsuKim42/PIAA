@@ -9,7 +9,7 @@ from tqdm import trange
 import torch.nn.functional as F
 
 class PIAA:
-    def __init__(self, dataset="PARA", input_type="clip", method="maml", device="cuda", loss="MAE", k_neighbors=5, knn_distance_func="default", knn_weighted=False):
+    def __init__(self, dataset="PARA", input_type="clip", method="maml", device="cuda", loss="MAE", k_neighbors=5, knn_distance_func="default", knn_weighted=False, verbose=False):
         """
         Initialize the PIAA model with a specific dataset and checkpoint.
 
@@ -21,6 +21,7 @@ class PIAA:
         - loss (str): The loss function to use for adaptation.
         """
         self.dataset = dataset
+        self.verbose = verbose
 
         self.input_type = input_type
         if input_type == "image":
@@ -65,7 +66,7 @@ class PIAA:
             model = ScorePredictor(width=2048, depth=4)
             ckpt_fname = "sac_finetune.pt"
 
-        self.ckpt_fname = "/workspace/Projects/CRC/piaa/ckpt/" + ckpt_fname
+        self.ckpt_fname = "/home/kyungsukim/git/piaa/ckpt/" + ckpt_fname
         state_dict = torch.load(self.ckpt_fname)
         model.load_state_dict(state_dict)
         model.to(self.device)
@@ -110,13 +111,17 @@ class PIAA:
             x = self.extract_features(x)
             y = torch.tensor(y).float().unsqueeze(1).to(self.device)
 
-            pbar = trange(steps)
+            if self.verbose:
+                pbar = trange(steps)
+            else:
+                pbar = range(steps)
             if self.method == "maml": 
                 for step in pbar:
                     scores = self.learner(x)
                     loss = self.loss_fn(scores, y)
                     self.learner.adapt(loss)
-                    pbar.set_description(f"Loss for Support Set: {loss.item():.4f}")
+                    if self.verbose:
+                        pbar.set_description(f"Loss for Support Set: {loss.item():.4f}")
             elif self.method == "finetune":
                 for step in pbar:
                     self.optim.zero_grad()
@@ -124,8 +129,8 @@ class PIAA:
                     loss = self.loss_fn(scores, y)
                     loss.backward()
                     self.optim.step()
-                    pbar.set_description(f"Loss for Support Set: {loss.item():.4f}")
-
+                    if self.verbose:
+                        pbar.set_description(f"Loss for Support Set: {loss.item():.4f}")
             return
     
     def predict(self, x):
@@ -179,7 +184,7 @@ class KNNRegressor:
         else:
             raise ValueError("Distance function is either 'default' or 'euclidean'.")
         
-    def default_distance_func(self, x_query, x_support):
+    def default_distance_func(self, x_query, x_support, batch_size=128):
         """
         Default distance function using cosine similarity.
         """
@@ -208,7 +213,8 @@ class KNNRegressor:
         Predict the labels for the query set based on stored support features.
         """
         distances = self.distance_func(x_query, self.support_features)
-        knn_indices = distances.topk(self.k_neighbors, largest=False, dim=1).indices
+        # If k is larger than the number of support samples, use all samples.
+        knn_indices = distances.topk(min(self.k_neighbors, self.support_features.shape[0]), largest=False, dim=1).indices
         knn_scores = torch.gather(self.support_labels.expand_as(distances), 1, knn_indices)
         if self.weighted:
             # Gather the k nearest neighbors' distances

@@ -7,7 +7,7 @@ from PIL import Image
 
 
 class SACTaskset():
-    def __init__(self, split="train", support_size=80, query_size=20, data_path="/disk2/SAC/", input_type="clip"):
+    def __init__(self, split="train", support_size=80, query_size=20, data_path="/disk2/SAC/", input_type="clip", return_prompt=False):
         df = pd.read_csv('/disk2/SAC/metadata.csv')
         
         assert split in ["train", "test"]
@@ -15,6 +15,7 @@ class SACTaskset():
         # self.sid_list = list(sids.columns)
         self.sid_list = [int(i) for i in sids.columns]
         self.num_sid = len(self.sid_list)
+        self.return_prompt = return_prompt
         
         self.support_size = support_size
         self.query_size = query_size
@@ -28,17 +29,28 @@ class SACTaskset():
         sid_df = self.df[self.df['sid'] == sid]
         num_samples = sid_df.shape[0]
         
+
         # adjust support, query size for small number of samples
-        if num_samples >= self.support_size + self.query_size:
+        # if query_size is not specified, set it to the remaining samples
+        if self.query_size == -1:
             support_size = self.support_size
-            query_size = self.query_size
+            query_size = num_samples - self.support_size
         else:
-            support_size = int(num_samples * self.support_size / (self.support_size + self.query_size))
-            query_size = num_samples - support_size
-        
+        # if query_size is specified, adjust the support size accordingly.
+            if num_samples >= self.support_size + self.query_size:
+                support_size = self.support_size
+                query_size = self.query_size
+            # if the number of samples is smaller than the sum of support and query size,
+            # set the support size to the ratio of the support size and query size.
+            else:
+                support_size = int(num_samples * self.support_size / (self.support_size + self.query_size))
+                query_size = num_samples - support_size
+
+        # sample the indices.
         random_indices = np.random.permutation(num_samples)
         support_indices = random_indices[:support_size]
         query_indices = random_indices[support_size:support_size+query_size]
+        
         
         # support_iids = sid_df.iloc[support_indices]['iid'].values
         support_img_names = sid_df.iloc[support_indices]['path'].values
@@ -55,8 +67,15 @@ class SACTaskset():
         elif self.input_type == "image":
             query_x = self.load_image(query_img_names)
         query_y = sid_df.iloc[query_indices]['rating'].values
+        
 
-        return support_x, support_y, query_x, query_y
+        if not self.return_prompt:
+            return support_x, support_y, query_x, query_y
+        else:
+            support_img_names = [" ".join(name.split("_")[1:-1]) for name in support_img_names]
+            query_img_names = [" ".join(name.split("_")[1:-1]) for name in query_img_names]
+            return support_x, support_y, query_x, query_y, support_img_names, query_img_names
+
     
     def load_embedding(self, img_names):
         emb = np.zeros([len(img_names), 512])
@@ -110,13 +129,13 @@ class SACDataset(Dataset):
 
 
 def main():
-    taskset = SACTaskset()
+    taskset = SACTaskset("test", return_prompt=True)
     dataset = SACDataset()
 
     # Iterate over all samples in taskset
     for sid_index in tqdm(range(taskset.num_sid), desc="Taskset Progress"):
         try:
-            support_x, support_y, query_x, query_y = taskset.sample(sid_index)
+            support_x, support_y, query_x, query_y, support_name, query_name = taskset.sample(sid_index)
         except Exception as e:
             print(f"Error in sid {sid_index}: {e}")
 
